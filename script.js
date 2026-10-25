@@ -429,7 +429,7 @@
     if (!k.length) { const s = el('div', 'state'); s.append(el('h2', null, 'אין נקודות ידע ליום הזה')); c.append(s); return; }
     c.append(el('p', 'hintline', 'קל: חוזר בעוד 5 חודשים · הבנתי: בעוד חודש וחצי · קשה לי: בעוד חודש'));
     k.forEach((it, i) => {
-      const card = el('article', 'card' + (isLearned(it) ? ' done' : ''));
+      const card = el('article', 'card' + (isLearned(it) ? ' done' : '')); card.style.setProperty('--d', 'var(--c-' + (DOMAINS[it.domain] ? it.domain : 'current') + ')');
       const head = el('div', 'card-head'); head.append(chipFor(it), el('span', 'idx', (i + 1) + ' / ' + k.length));
       card.append(head, el('h2', null, it.title || ''));
       const body = el('div', 'body'); body.append(paras(it.content)); card.append(body);
@@ -704,7 +704,7 @@
     t.addEventListener('click', () => { hideHe = !hideHe; renderEnglish(); }); tb.append(t); box.append(tb);
     const wrap = el('section', 'list'); wrap.setAttribute('aria-label', 'משפטי האנגלית');
     list.forEach((it, i) => {
-      const card = el('article', 'card');
+      const card = el('article', 'card'); card.style.setProperty('--d', 'var(--c-' + (DOMAINS[it.domain] ? it.domain : 'current') + ')');
       const head = el('div', 'card-head'); head.append(chipFor(it), el('span', 'idx', (i + 1) + ' / ' + list.length)); card.append(head);
       const en = el('p', 'en'); en.lang = 'en'; en.append(highlight(it.en, it.keyword)); card.append(en);
       if (!hideHe) card.append(el('p', 'he', it.he || ''));
@@ -761,7 +761,7 @@
     meta.append(el('span', null, (practice.i + 1) + ' / ' + practice.order.length), bar, dirBtn); w.append(meta);
 
     const he2en = practice.dir === 'he2en';
-    const card = el('div', 'flash');
+    const card = el('div', 'flash'); card.style.setProperty('--d', 'var(--c-' + (DOMAINS[it.domain] ? it.domain : 'current') + ')');
     card.append(el('span', 'prompt', he2en ? 'כיצד אומרים זאת באנגלית?' : 'מה פירוש המשפט?'));
     const q = el('p', 'q' + (he2en ? '' : ' ltr'));
     if (he2en) q.textContent = it.he || ''; else { q.lang = 'en'; q.append(highlight(it.en, it.keyword)); }
@@ -826,7 +826,7 @@
     meta.append(el('span', null, (rsess.i + 1) + ' / ' + rsess.order.length), bar); w.append(meta);
 
     const isEn = it.type === 'english';
-    const card = el('div', 'flash');
+    const card = el('div', 'flash'); card.style.setProperty('--d', 'var(--c-' + (DOMAINS[it.domain] ? it.domain : 'current') + ')');
     const tags = el('div', 'rv-tags'); tags.append(chipFor(it), el('span', 'rv-from', 'מתאריך ' + heDate(it.date))); card.append(tags);
     card.append(el('span', 'prompt', isEn ? 'כיצד אומרים זאת באנגלית?' : 'מה אתה זוכר?'));
     card.append(el('p', 'q', isEn ? (it.he || '') : (it.question || it.title || '')));

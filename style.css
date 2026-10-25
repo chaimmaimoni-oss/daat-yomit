@@ -1,20 +1,23 @@
-/* דעת יומית — "מצפה כוכבים של חוכמה": דיו לילי, עלי זהב, שמי כוכבים חיים.
+/* דעת יומית — כחול-צי ואזמרגד עמוקים, הדגשות זהב, ברונזה וכחול-רויאל; צבע אבן-חן לכל תחום.
    עמודת קריאה אחת; כותרת דביקה; לוח שמיים כהה בראש מסך היום; כרטיסים כמו דפי כתב-יד מוזהבים. */
 
 :root{
-  /* ערכת לילה (ברירת המחדל) */
-  --bg:#101A2C; --bg2:#142036; --surface:#18253D; --surface2:#1D2C47;
-  --ink:#EFE8D8; --muted:#A1AABA; --faint:#6E788A;
-  --line:rgba(212,175,99,.17); --line-strong:rgba(212,175,99,.40);
-  --gold:#D4AF63; --gold-hi:#F3D893; --gold-lo:#9A7733;
-  --accent:#D4AF63; --accent-soft:rgba(212,175,99,.11); --brass:#D4AF63;
-  --emerald:#63C7A4; --danger:#E5826F; --on-gold:#191207;
-  --glow:rgba(212,175,99,.20); --shadow:0 18px 50px -24px rgba(0,0,0,.75);
-  --c-philosophy:#B9A2F0; --c-economics:#6FD0BE; --c-history:#E7BC6D; --c-politics:#9DB0FF;
-  --c-geopolitics:#F0998A; --c-rhetoric:#EE93C2; --c-critical:#B5D27A; --c-psychology:#F4AB78;
-  --c-science:#84CFEA; --c-jewish:#E2C46F; --c-stats:#B3C2CD; --c-current:#F38E9F;
-  /* לוח השמיים נשאר כהה בשתי הערכות */
-  --hero-bg:linear-gradient(155deg,#1A2B4C 0%,#223A66 55%,#1B2E52 100%); --hero-ink:#F6F1E6; --hero-muted:#C3CBDA; --hero-gold:#E6C47C; --hero-line:rgba(230,196,124,.28); --star:#EAF0FA; --star-gold:#F3D893; --star-link:rgba(230,196,124,.22);
+  /* ערכת לילה פרימיום: כחול-לילה כמעט שחור */
+  --bg:#060A13; --bg2:#0A1120; --surface:#0E1628; --surface2:#131D33;
+  --ink:#F5F2EA; --muted:#A7B0C2; --faint:#6D778B;
+  --line:rgba(160,180,220,.09); --line-strong:rgba(217,180,106,.38);
+  --gold:#D9B46A; --gold-hi:#F4D893; --gold-lo:#A27C35; --bronze:#C98A55;
+  --royal:#5B7FFF; --royal-hi:#86A2FF; --emerald:#2FBF8E; --emerald-hi:#5BDCAE; --danger:#E0566A; --danger-hi:#F17C8C;
+  --accent:#D9B46A; --accent-soft:rgba(217,180,106,.10); --brass:#D9B46A; --on-gold:#17110A;
+  --glow:rgba(217,180,106,.24);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4);
+  --shadow:0 1px 0 rgba(255,255,255,.03) inset,0 14px 36px -16px rgba(0,0,0,.75),0 30px 60px -36px rgba(0,0,0,.8);
+  --shadow-lg:0 1px 0 rgba(255,255,255,.04) inset,0 26px 60px -22px rgba(0,0,0,.85);
+  --page-mesh:radial-gradient(900px 520px at 100% -5%,rgba(91,127,255,.12),transparent 60%),radial-gradient(800px 600px at -10% 45%,rgba(47,191,142,.08),transparent 60%),radial-gradient(700px 500px at 60% 110%,rgba(217,180,106,.08),transparent 60%);
+  --c-philosophy:#A98BF5; --c-economics:#34C79A; --c-history:#E4A93C; --c-politics:#6E95FF;
+  --c-geopolitics:#E8677A; --c-rhetoric:#E66FA8; --c-critical:#7FC77A; --c-psychology:#EE9553;
+  --c-science:#3EC2DB; --c-jewish:#E0BE62; --c-stats:#9DB2C6; --c-current:#F0736A;
+  --hero-bg:linear-gradient(135deg,#0B1A33 0%,#10305A 42%,#0C4A4A 100%); --hero-ink:#F7F3EA; --hero-muted:#C6D0DE; --hero-gold:#E7C77E; --hero-line:rgba(231,199,126,.28); --star:#EAF2FF; --star-gold:#F5DA97; --star-link:rgba(231,199,126,.22);
   --font-display:"Frank Ruhl Libre","David Libre","Times New Roman",serif;
   --font-serif:"Frank Ruhl Libre","David Libre","Times New Roman",serif;
   --font-body:"Assistant","Segoe UI","Arial Hebrew",Arial,sans-serif;
@@ -25,32 +28,40 @@
 }
 @media (prefers-color-scheme: light){
   :root:not([data-theme="dark"]){
-    --bg:#F2F0EA; --bg2:#EAE6DB; --surface:#FBFAF6; --surface2:#F4F1E8;
-    --ink:#121826; --muted:#545F71; --faint:#7D8697;
-    --line:rgba(122,92,28,.17); --line-strong:rgba(122,92,28,.40);
-    --gold:#8C6820; --gold-hi:#B28935; --gold-lo:#6A4F17;
-    --accent:#8C6820; --accent-soft:rgba(140,104,32,.09); --brass:#8C6820;
-    --emerald:#2D7A60; --danger:#A63F2E; --on-gold:#FFFCF3;
-    --glow:rgba(140,104,32,.16); --shadow:0 18px 40px -26px rgba(20,26,38,.45);
-    --c-philosophy:#5E3F94; --c-economics:#16695E; --c-history:#875B12; --c-politics:#2C3E99;
-    --c-geopolitics:#9A3F30; --c-rhetoric:#982F67; --c-critical:#4E621A; --c-psychology:#A9531A;
-    --c-science:#1E6F8F; --c-jewish:#755814; --c-stats:#45596A; --c-current:#B22F44;
-    --hero-bg:linear-gradient(160deg,#FFFDF8 0%,#F6F0E2 60%,#EFE6D2 100%); --hero-ink:#14223C; --hero-muted:#4F5B70; --hero-gold:#8C6820; --hero-line:rgba(140,104,32,.28); --star:#2A3E66; --star-gold:#A87F2C; --star-link:rgba(140,104,32,.25);
-    color-scheme:light;
+  --bg:#EDF0F4; --bg2:#E3E8EF; --surface:#FFFFFF; --surface2:#F8F9FC;
+  --ink:#0E1A2E; --muted:#4A586E; --faint:#7A8699;
+  --line:rgba(14,26,46,.09); --line-strong:rgba(166,124,46,.42);
+  --gold:#A67C2E; --gold-hi:#D2A750; --gold-lo:#7A5A1C; --bronze:#9A5A2C;
+  --royal:#2747B5; --royal-hi:#4A6CE0; --emerald:#0D7356; --emerald-hi:#1A9A74; --danger:#A8283C; --danger-hi:#CC3E53;
+  --accent:#A67C2E; --accent-soft:rgba(166,124,46,.09); --brass:#A67C2E; --on-gold:#FFFDF7;
+  --glow:rgba(166,124,46,.22);
+  --shadow-sm:0 1px 2px rgba(14,26,46,.06),0 2px 6px rgba(14,26,46,.05);
+  --shadow:0 1px 2px rgba(14,26,46,.05),0 10px 28px -10px rgba(14,26,46,.16),0 24px 48px -28px rgba(14,26,46,.18);
+  --shadow-lg:0 2px 4px rgba(14,26,46,.05),0 20px 50px -18px rgba(14,26,46,.28);
+  --page-mesh:radial-gradient(900px 500px at 100% -5%,rgba(39,71,181,.08),transparent 60%),radial-gradient(800px 600px at -10% 40%,rgba(13,115,86,.07),transparent 60%),radial-gradient(700px 500px at 60% 110%,rgba(166,124,46,.08),transparent 60%);
+  --c-philosophy:#6A3FC0; --c-economics:#0B7A5C; --c-history:#A86A0C; --c-politics:#1F48C4;
+  --c-geopolitics:#A3253B; --c-rhetoric:#A82A68; --c-critical:#3B7D34; --c-psychology:#B35415;
+  --c-science:#0D7E96; --c-jewish:#93701A; --c-stats:#41596F; --c-current:#B83A2E;
+  --hero-bg:linear-gradient(135deg,#0B1A33 0%,#10305A 42%,#0C4A4A 100%); --hero-ink:#F7F3EA; --hero-muted:#C6D0DE; --hero-gold:#E7C77E; --hero-line:rgba(231,199,126,.28); --star:#EAF2FF; --star-gold:#F5DA97; --star-link:rgba(231,199,126,.22);
+  color-scheme:light;
   }
 }
 :root[data-theme="light"]{
-  --bg:#F2F0EA; --bg2:#EAE6DB; --surface:#FBFAF6; --surface2:#F4F1E8;
-  --ink:#121826; --muted:#545F71; --faint:#7D8697;
-  --line:rgba(122,92,28,.17); --line-strong:rgba(122,92,28,.40);
-  --gold:#8C6820; --gold-hi:#B28935; --gold-lo:#6A4F17;
-  --accent:#8C6820; --accent-soft:rgba(140,104,32,.09); --brass:#8C6820;
-  --emerald:#2D7A60; --danger:#A63F2E; --on-gold:#FFFCF3;
-  --glow:rgba(140,104,32,.16); --shadow:0 18px 40px -26px rgba(20,26,38,.45);
-  --c-philosophy:#5E3F94; --c-economics:#16695E; --c-history:#875B12; --c-politics:#2C3E99;
-  --c-geopolitics:#9A3F30; --c-rhetoric:#982F67; --c-critical:#4E621A; --c-psychology:#A9531A;
-  --c-science:#1E6F8F; --c-jewish:#755814; --c-stats:#45596A; --c-current:#B22F44;
-  --hero-bg:linear-gradient(160deg,#FFFDF8 0%,#F6F0E2 60%,#EFE6D2 100%); --hero-ink:#14223C; --hero-muted:#4F5B70; --hero-gold:#8C6820; --hero-line:rgba(140,104,32,.28); --star:#2A3E66; --star-gold:#A87F2C; --star-link:rgba(140,104,32,.25);
+  --bg:#EDF0F4; --bg2:#E3E8EF; --surface:#FFFFFF; --surface2:#F8F9FC;
+  --ink:#0E1A2E; --muted:#4A586E; --faint:#7A8699;
+  --line:rgba(14,26,46,.09); --line-strong:rgba(166,124,46,.42);
+  --gold:#A67C2E; --gold-hi:#D2A750; --gold-lo:#7A5A1C; --bronze:#9A5A2C;
+  --royal:#2747B5; --royal-hi:#4A6CE0; --emerald:#0D7356; --emerald-hi:#1A9A74; --danger:#A8283C; --danger-hi:#CC3E53;
+  --accent:#A67C2E; --accent-soft:rgba(166,124,46,.09); --brass:#A67C2E; --on-gold:#FFFDF7;
+  --glow:rgba(166,124,46,.22);
+  --shadow-sm:0 1px 2px rgba(14,26,46,.06),0 2px 6px rgba(14,26,46,.05);
+  --shadow:0 1px 2px rgba(14,26,46,.05),0 10px 28px -10px rgba(14,26,46,.16),0 24px 48px -28px rgba(14,26,46,.18);
+  --shadow-lg:0 2px 4px rgba(14,26,46,.05),0 20px 50px -18px rgba(14,26,46,.28);
+  --page-mesh:radial-gradient(900px 500px at 100% -5%,rgba(39,71,181,.08),transparent 60%),radial-gradient(800px 600px at -10% 40%,rgba(13,115,86,.07),transparent 60%),radial-gradient(700px 500px at 60% 110%,rgba(166,124,46,.08),transparent 60%);
+  --c-philosophy:#6A3FC0; --c-economics:#0B7A5C; --c-history:#A86A0C; --c-politics:#1F48C4;
+  --c-geopolitics:#A3253B; --c-rhetoric:#A82A68; --c-critical:#3B7D34; --c-psychology:#B35415;
+  --c-science:#0D7E96; --c-jewish:#93701A; --c-stats:#41596F; --c-current:#B83A2E;
+  --hero-bg:linear-gradient(135deg,#0B1A33 0%,#10305A 42%,#0C4A4A 100%); --hero-ink:#F7F3EA; --hero-muted:#C6D0DE; --hero-gold:#E7C77E; --hero-line:rgba(231,199,126,.28); --star:#EAF2FF; --star-gold:#F5DA97; --star-link:rgba(231,199,126,.22);
   color-scheme:light;
 }
 
@@ -59,10 +70,7 @@ html,body{background:var(--bg);margin:0}
 html{overflow-x:clip}
 body{color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.7;direction:rtl;
   -webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;
-  background:
-    radial-gradient(1100px 520px at 85% -10%, var(--glow), transparent 60%),
-    radial-gradient(900px 600px at -10% 110%, rgba(110,140,255,.06), transparent 60%),
-    var(--bg);
+  background:var(--page-mesh),var(--bg);
   background-attachment:fixed;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
   padding-block:0 calc(var(--tabbar-h) + env(safe-area-inset-bottom,0px) + 28px)}
@@ -412,3 +420,50 @@ select.field.wide{width:100%;min-height:44px;font-size:1rem}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important}
 }
+
+
+/* =====================================================================
+   שכבת פרימיום: עומק, הצללות רכות ומעברי צבע עדינים
+   ===================================================================== */
+.card{background:linear-gradient(180deg,color-mix(in srgb,var(--d,var(--gold)) 6%,var(--surface)) 0,var(--surface) 140px);
+  border:1px solid color-mix(in srgb,var(--d,var(--gold)) 16%,var(--line));box-shadow:var(--shadow);padding-top:22px}
+.card::before{inset:0 0 auto 0;height:3px;border-radius:16px 16px 0 0;opacity:1;
+  background:linear-gradient(90deg,var(--d,var(--gold)),color-mix(in srgb,var(--d,var(--gold)) 40%,var(--gold)) 60%,transparent)}
+.card:hover{border-color:color-mix(in srgb,var(--d,var(--gold)) 40%,var(--line));box-shadow:var(--shadow-lg);transform:translateY(-2px)}
+.card h2{color:var(--ink)}
+.idx{color:color-mix(in srgb,var(--d,var(--gold)) 70%,var(--ink))}
+.facet{background:color-mix(in srgb,var(--d,var(--gold)) 7%,transparent);border-inline-start-color:var(--d,var(--gold))}
+.facet .lbl{color:color-mix(in srgb,var(--d,var(--gold)) 85%,var(--ink))}
+.chip{background:color-mix(in srgb,var(--d) 12%,var(--surface));border-color:color-mix(in srgb,var(--d) 35%,transparent);box-shadow:var(--shadow-sm)}
+
+/* כפתורים */
+.primary{background:linear-gradient(180deg,var(--gold-hi) 0%,var(--gold) 55%,var(--gold-lo) 100%);
+  box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 -1px 0 rgba(0,0,0,.12) inset,0 8px 20px -8px var(--glow),0 2px 4px rgba(0,0,0,.12)}
+.primary:hover{filter:brightness(1.05) saturate(1.05);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 12px 28px -10px var(--glow),0 2px 4px rgba(0,0,0,.12)}
+.ghost,.btn,.pbtn,.gloss-toggle,.grade{box-shadow:var(--shadow-sm)}
+.btn{background:var(--surface)}
+.btn[aria-pressed="true"].easy{background:linear-gradient(180deg,var(--gold-hi),var(--gold) 60%,var(--gold-lo));border-color:var(--gold-lo)}
+.btn[aria-pressed="true"].ok{background:linear-gradient(180deg,var(--emerald-hi),var(--emerald));border-color:var(--emerald);color:#fff}
+.btn[aria-pressed="true"].hard{background:linear-gradient(180deg,var(--danger-hi),var(--danger));border-color:var(--danger);color:#fff}
+.btn[aria-pressed="true"].fav{background:linear-gradient(180deg,color-mix(in srgb,var(--royal) 14%,var(--surface)),var(--surface));border-color:var(--royal);color:var(--royal)}
+.seg button[aria-pressed="true"],.filters button[aria-pressed="true"]{background:linear-gradient(180deg,var(--royal-hi),var(--royal));color:#fff;border-color:var(--royal);box-shadow:0 6px 16px -8px var(--royal)}
+.grade.easy{background:linear-gradient(180deg,color-mix(in srgb,var(--gold) 16%,var(--surface)),var(--surface))}
+.grade.medium{border-color:color-mix(in srgb,var(--emerald) 55%,transparent);color:var(--emerald);background:linear-gradient(180deg,color-mix(in srgb,var(--emerald) 12%,var(--surface)),var(--surface))}
+.grade.hard{background:linear-gradient(180deg,color-mix(in srgb,var(--danger) 10%,var(--surface)),var(--surface))}
+.card.done::after{background:linear-gradient(180deg,var(--emerald-hi),var(--emerald));color:#fff}
+.pbtn{background:var(--surface)}
+.dn-add{background:linear-gradient(180deg,rgba(231,199,126,.22),rgba(231,199,126,.08));border-style:solid;box-shadow:0 8px 20px -10px rgba(231,199,126,.6)}
+
+/* משטחים */
+.extra,.ask,.set-sec,.quote,.ar-item,.tile,.quiz,.flash,.gen-banner,.kwbox,.qform{box-shadow:var(--shadow)}
+.extra.question{background:radial-gradient(420px 220px at 100% 0%,color-mix(in srgb,var(--royal) 10%,transparent),transparent 70%),var(--surface);border-color:color-mix(in srgb,var(--royal) 30%,var(--line))}
+.extra.question .lbl{color:var(--royal)}
+.ask{background:linear-gradient(160deg,color-mix(in srgb,var(--emerald) 8%,var(--surface)),var(--surface) 60%)}
+.ask .lbl{color:var(--emerald)}
+.tile.streak{background:radial-gradient(180px 110px at 50% 0%,color-mix(in srgb,var(--gold) 18%,transparent),transparent 75%),var(--surface)}
+.flash{background:radial-gradient(520px 260px at 50% -10%,color-mix(in srgb,var(--d,var(--royal)) 12%,transparent),transparent 70%),var(--surface);border-color:color-mix(in srgb,var(--d,var(--gold)) 30%,var(--line))}
+.tab[aria-current="page"]{color:var(--gold)}
+.tabbar{box-shadow:0 -10px 30px -18px rgba(0,0,0,.35)}
+.masthead{box-shadow:0 0 0 100vmax var(--bg),0 8px 24px -18px rgba(0,0,0,.4)}
+.hero{box-shadow:0 24px 50px -30px rgba(6,10,19,.6)}
+.hero .astrolabe{opacity:.24}

@@ -1335,7 +1335,7 @@ ${kn}
 
 כתוב את חלק השפה של התדריך במבנה ה-JSON שלהלן.
 - מילות מפתח באנגלית שכבר נלמדו (אסור לחזור): ${c.recentE.join(' | ') || 'אין'}
-- english: בדיוק 8 משפטים ברמה גבוהה ומתקדמת (C1), מעולמות המנהיגות, הניהול, הרטוריקה, הפילוסופיה והדיפלומטיה, וקשורים לנושא ולנקודות הידע. מילת המפתח חייבת להופיע ככתבה בתוך המשפט. אם יש שתי מילות מפתח, הפרד ביניהן ב-" · ".
+- english: בדיוק 4 משפטים ברמה גבוהה ומתקדמת (C1), מעולמות המנהיגות, הניהול, הרטוריקה, הפילוסופיה והדיפלומטיה, וקשורים לנושא ולנקודות הידע. מילת המפתח חייבת להופיע ככתבה בתוך המשפט. אם יש שתי מילות מפתח, הפרד ביניהן ב-" · ".
 - gloss: לכל משפט, פירוש מילה במילה של המשפט הראשי (en), לפי סדר המילים, בתבנית word=פירוש|word=פירוש. כל מילה במשפט מופיעה, בלי סימני פיסוק. ביטוי קבוע כיחידה אחת. a/an: (סתמי). the: ה־. מילת עזר בלי מקבילה: הסבר קצר בסוגריים.
 - quotes: 1 או 2 ציטוטים מאומתים בלבד, קצרים, ממקורות קלאסיים, מחז"ל, ממדינאים או מהוגים. אם אין ודאות בנוסח או במקור, אל תכלול.
 - ערכי domain המותרים: ${doms}.
@@ -1350,7 +1350,7 @@ ${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. �
   }
 
   function toBlock(o, c) {
-    if (!o || !o.day || !o.day.topic || !Array.isArray(o.knowledge) || o.knowledge.length < 5 || !Array.isArray(o.english) || o.english.length < 5) throw { code: 'parse' };
+    if (!o || !o.day || !o.day.topic || !Array.isArray(o.knowledge) || o.knowledge.length < 5 || (!c.extra && (!Array.isArray(o.english) || o.english.length < 3))) throw { code: 'parse' };
     const d = c.target || today, dom = x => DOMAINS[x] ? x : 'current';
     const items = [];
     o.knowledge.slice(0, 8).forEach((k, i) => {
@@ -1359,7 +1359,7 @@ ${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. �
       if (k.requestId) it.requestId = String(k.requestId);
       items.push(it);
     });
-    o.english.slice(0, 10).forEach((e, i) => {
+    (Array.isArray(o.english) ? o.english : []).slice(0, 4).forEach((e, i) => {
       if (!e || !e.en) return;
       const it = { id: d + '-e' + (i + 1), date: d, type: 'english', order: i + 1, domain: dom(e.domain), title: e.keyword || '', en: e.en, he: e.he || '', keyword: e.keyword || '', keywordHe: e.keywordHe || '', example: e.example || '', exampleHe: e.exampleHe || '' };
       const g = parseGloss(e.gloss); if (g.length >= 2) it.gloss = g;
@@ -1413,10 +1413,13 @@ ${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. �
       if (r1.stop === 'max_tokens') throw { code: 'cut' };
       const core = parseJSON(textOf(r1.content));
       if (!core || !core.day || !Array.isArray(core.knowledge) || core.knowledge.length < 5) throw { code: 'parse' };
-      genStageIdx = Math.max(genStageIdx, 3); renderGenBanner();
-      const r2 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: langPrompt(ctx, core) }], maxTokens: 12000 });
-      if (r2.stop === 'max_tokens') throw { code: 'cut' };
-      const lang = parseJSON(textOf(r2.content));
+      let lang = { english: [], quotes: [], weekly: null };
+      if (!extra) {
+        genStageIdx = Math.max(genStageIdx, 3); renderGenBanner();
+        const r2 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: langPrompt(ctx, core) }], maxTokens: 8000 });
+        if (r2.stop === 'max_tokens') throw { code: 'cut' };
+        lang = parseJSON(textOf(r2.content));
+      }
       const block = toBlock(Object.assign({}, core, lang), ctx);
       mergeContent(block, false);
       if (!extra) st().lastGen = { date: today, at: new Date().toISOString(), ok: true };

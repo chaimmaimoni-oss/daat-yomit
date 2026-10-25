@@ -469,3 +469,6 @@ select.field.wide{width:100%;min-height:44px;font-size:1rem}
 .hero .astrolabe{opacity:.24}
 
 .key-ok{font-size:.88rem;font-weight:700;color:var(--emerald);background:color-mix(in srgb,var(--emerald) 10%,transparent);border:1px solid color-mix(in srgb,var(--emerald) 30%,transparent);border-radius:10px;padding:8px 12px}
+
+/* הסתרת תג האירוח של Netlify, שמסתיר את סרגל הלשוניות */
+#netlify-badge,[id^="netlify-badge"],[class*="netlify-badge"],[class*="NetlifyBadge"],a[href*="netlify.com"][target="_blank"]:not(.wrap a),body > a[href*="netlify"],body > div[id*="netlify"]{display:none!important;visibility:hidden!important;pointer-events:none!important}

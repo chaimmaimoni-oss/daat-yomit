@@ -1362,7 +1362,7 @@ ${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. 
   }
 
   /* ---------- יצירת התדריך ---------- */
-  let genBusy = false, genStageIdx = 0, genTimer = null;
+  let genBusy = false, genStageIdx = 0, genTimer = null, genExtra = false;
   const GEN_STAGES = ['מחפש את החדשות של היום', 'בוחר את הנושא האקטואלי', 'כותב את נקודות הידע', 'מכין את משפטי האנגלית', 'בודק ומסדר את התדריך'];
   function canAutoGen() {
     const lg = st().lastGen;
@@ -1382,7 +1382,9 @@ ${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. 
     if (S.days[target]) { if (manual) toast('התדריך של היום כבר קיים.'); return; }
     if (!getKey()) { if (manual) toast('הזן קודם מפתח API.'); return; }
     try { const l = +localStorage.getItem(LOCK) || 0; if (!manual && Date.now() - l < 5 * 60 * 1000) return; localStorage.setItem(LOCK, String(Date.now())); } catch (e) { /* ignore */ }
-    genBusy = true; genStageIdx = 0;
+    genBusy = true; genStageIdx = 0; genExtra = !!extra;
+    let wake = null; try { if (navigator.wakeLock) wake = await navigator.wakeLock.request('screen'); } catch (e) { /* לא נתמך */ }
+    if (extra) { st().lastExtra = null; save(); }
     genTimer = setInterval(() => { genStageIdx = Math.min(genStageIdx + 1, GEN_STAGES.length - 1); renderGenBanner(); }, 20000);
     renderAll();
     const ctx = buildContext();
@@ -1395,14 +1397,15 @@ ${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. 
       if (!extra) st().lastGen = { date: today, at: new Date().toISOString(), ok: true };
       save(); currentDate = extra ? target : pickDate(); practice = null; answerDraft = { date: null, text: '', dirty: false };
       toast(extra ? 'התדריך הנוסף מוכן' : 'התדריך של היום מוכן');
-      if (extra) window.scrollTo(0, 0);
+      if (extra) { st().lastExtra = { at: new Date().toISOString(), ok: true }; save(); window.scrollTo(0, 0); }
     } catch (e) {
-      if (extra) { toast(errMessage(e)); return; }
+      if (extra) { st().lastExtra = { at: new Date().toISOString(), ok: false, error: errMessage(e) }; save(); toast(errMessage(e)); return; }
       const prev = st().lastGen;
       st().lastGen = { date: today, at: new Date().toISOString(), ok: false, error: errMessage(e), failCount: (prev && prev.date === today && !prev.ok ? (prev.failCount || 1) + 1 : 1) };
       save();
     } finally {
       genBusy = false; clearInterval(genTimer);
+      try { if (wake) wake.release(); } catch (e) { /* ignore */ }
       try { localStorage.removeItem(LOCK); } catch (e) { /* ignore */ }
       renderAll();
     }
@@ -1411,12 +1414,22 @@ ${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. 
 
   function renderGenBanner() {
     const b = $('#gen-banner'); b.innerHTML = ''; b.className = 'gen-banner';
-    if (S.days[today] && !genBusy) { b.hidden = true; return; }
-    const lg = st().lastGen;
+    const lg = st().lastGen, lx = st().lastExtra;
     if (genBusy) {
       const h = el('h3'); h.append(el('span', 'spin'), document.createTextNode(GEN_STAGES[genStageIdx] + '…'));
-      b.append(h, el('p', 'he', 'תדריך הבוקר נכתב עכשיו. זה לוקח בדרך כלל דקה עד שלוש. בינתיים אפשר לעבור לחזרה או לאנגלית.'));
-    } else if (!getKey()) {
+      b.append(h, el('p', 'he', (genExtra ? 'התדריך הנוסף' : 'תדריך הבוקר') + ' נכתב עכשיו. זה לוקח בדרך כלל דקה עד שלוש. השאר את האפליקציה פתוחה עד הסיום.'));
+      b.hidden = false; return;
+    }
+    if (lx && !lx.ok && Date.now() - new Date(lx.at) < 6 * 3600e3) {
+      b.classList.add('err');
+      b.append(el('h3', null, 'יצירת התדריך הנוסף נכשלה'), el('p', 'he', lx.error || ''));
+      const again = el('button', 'primary', 'נסה שוב'); again.type = 'button'; again.addEventListener('click', generateExtra);
+      const x = el('button', 'ghost', 'סגור'); x.type = 'button'; x.addEventListener('click', () => { st().lastExtra = null; save(); renderGenBanner(); });
+      const row = el('div', 'ans-row'); row.append(again, x); b.append(row);
+      b.hidden = false; return;
+    }
+    if (S.days[today]) { b.hidden = true; return; }
+    if (!getKey()) {
       b.append(el('h3', null, 'התדריך של היום עוד לא נוצר'), el('p', 'he', 'כדי שהתדריך ייווצר לבד כל בוקר, הזן פעם אחת מפתח API בהגדרות.'));
       const go = el('button', 'ghost', 'למסך ההגדרות'); go.type = 'button'; go.addEventListener('click', () => show('settings')); b.append(go);
     } else if (lg && lg.date === today && !lg.ok) {
@@ -1491,7 +1504,7 @@ ${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. 
     try { await callClaude({ messages: [{ role: 'user', content: 'השב במילה אחת: תקין' }], maxTokens: 10 }); s.textContent = 'החיבור תקין. המודל זמין והמפתח פעיל.'; }
     catch (e) { s.textContent = errMessage(e); }
   });
-  $('#btn-gen-now').addEventListener('click', () => { show('today'); generateToday(true); });
+  $('#btn-gen-now').addEventListener('click', () => { show('today'); if (S.days[today]) generateExtra(); else generateToday(true); });
 
   function renderAutoSettings() {
     const has = !!getKey();
@@ -1501,7 +1514,8 @@ ${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. 
     $('#model-select').value = st().model;
     $('#hour-select').value = String(st().hour || 0);
     $('#auto-toggle').checked = st().auto !== false;
-    $('#btn-gen-now').disabled = !has || genBusy || !!S.days[today];
+    $('#btn-gen-now').disabled = !has || genBusy;
+    $('#btn-gen-now').textContent = S.days[today] ? 'צור תדריך נוסף עכשיו' : 'צור את תדריך היום עכשיו';
     $('#btn-test').disabled = !has;
     $('#btn-key-del').hidden = !has;
     const lg = st().lastGen;

@@ -1257,10 +1257,13 @@
       const b = JSON.parse(JSON.stringify(ev.content_block || {}));
       if (b.type === 'server_tool_use' || b.type === 'tool_use') { st8.json[ev.index] = ''; }
       if (b.type === 'text' && !b.text) b.text = '';
+      if (b.type === 'thinking' && !b.thinking) b.thinking = '';
       st8.blocks[ev.index] = b;
     } else if (ev.type === 'content_block_delta') {
       const b = st8.blocks[ev.index], d = ev.delta || {}; if (!b) return;
       if (d.type === 'text_delta') { b.text = (b.text || '') + d.text; st8.chars += d.text.length; if (onProgress) onProgress(st8.chars); }
+      else if (d.type === 'thinking_delta') { b.thinking = (b.thinking || '') + (d.thinking || ''); }
+      else if (d.type === 'signature_delta') { b.signature = (b.signature || '') + (d.signature || ''); }
       else if (d.type === 'input_json_delta') st8.json[ev.index] = (st8.json[ev.index] || '') + (d.partial_json || '');
       else if (d.type === 'citations_delta') { (b.citations = b.citations || []).push(d.citation); }
     } else if (ev.type === 'content_block_stop') {
@@ -1278,9 +1281,11 @@
     const base = { model: st().model || MODELS[0][0], max_tokens: opts.maxTokens || 2000, messages: opts.messages };
     if (opts.system) base.system = opts.system;
     if (opts.search) base.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: opts.search }];
-    let msgs = opts.messages.slice(), content = [], soFar = 0;
+    let msgs = opts.messages.slice(), content = [], soFar = 0, noThink = true;
     for (let round = 0; round < 5; round++) {
-      const r = await streamOnce(key, Object.assign({}, base, { messages: msgs }), n => { if (opts.onProgress) opts.onProgress(soFar + n); });
+      let r;
+      try { r = await streamOnce(key, Object.assign({}, base, noThink ? { thinking: { type: 'disabled' } } : {}, { messages: msgs }), n => { if (opts.onProgress) opts.onProgress(soFar + n); }); }
+      catch (e) { if (noThink && e && e.code === 'http' && e.status === 400 && /thinking/i.test(e.message || '')) { noThink = false; round--; continue; } throw e; }
       soFar += textOf(r.content).length;
       content = content.concat(r.content);
       if (r.stop === 'pause_turn') { msgs = msgs.concat([{ role: 'assistant', content: r.content }]); continue; }

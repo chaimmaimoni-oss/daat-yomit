@@ -1214,26 +1214,77 @@
   function setKey(k) { try { if (k) localStorage.setItem(KEY_API, k); else localStorage.removeItem(KEY_API); return true; } catch (e) { return false; } }
   const st = () => S.settings;
 
+  /* קריאה ל-Claude בסטרימינג: התשובה מגיעה תוך כדי כתיבה, כך שהחיבור לא "שותק" ולא מתנתק בטלפון */
+  async function streamOnce(key, body, onProgress) {
+    let res;
+    try {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify(Object.assign({}, body, { stream: true }))
+      });
+    } catch (e) { throw { code: 'network' }; }
+    if (!res.ok) { let jj = null; try { jj = await res.json(); } catch (e) { /* גוף ריק */ } throw { code: 'http', status: res.status, message: (jj && jj.error && jj.error.message) || '' }; }
+    if (!res.body || !res.body.getReader) {
+      const t = await res.text();
+      return parseSSE(t, onProgress);
+    }
+    const reader = res.body.getReader(), dec = new TextDecoder();
+    const st8 = { blocks: [], json: {}, stop: null, chars: 0, buf: '' };
+    try {
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        st8.buf += dec.decode(value, { stream: true });
+        let i;
+        while ((i = st8.buf.indexOf('\n\n')) >= 0) { handleEvent(st8, st8.buf.slice(0, i), onProgress); st8.buf = st8.buf.slice(i + 2); }
+      }
+    } catch (e) { if (e && e.code) throw e; throw { code: 'network' }; }
+    if (st8.buf.trim()) handleEvent(st8, st8.buf, onProgress);
+    if (!st8.stop) throw { code: 'network' };
+    return { content: st8.blocks.filter(Boolean), stop: st8.stop };
+  }
+  function parseSSE(text, onProgress) {
+    const st8 = { blocks: [], json: {}, stop: null, chars: 0 };
+    text.split('\n\n').forEach(ev => handleEvent(st8, ev, onProgress));
+    return { content: st8.blocks.filter(Boolean), stop: st8.stop || 'end_turn' };
+  }
+  function handleEvent(st8, raw, onProgress) {
+    const line = raw.split('\n').filter(l => l.startsWith('data:')).map(l => l.slice(5).trim()).join('');
+    if (!line) return;
+    let ev; try { ev = JSON.parse(line); } catch (e) { return; }
+    if (ev.type === 'content_block_start') {
+      const b = JSON.parse(JSON.stringify(ev.content_block || {}));
+      if (b.type === 'server_tool_use' || b.type === 'tool_use') { st8.json[ev.index] = ''; }
+      if (b.type === 'text' && !b.text) b.text = '';
+      st8.blocks[ev.index] = b;
+    } else if (ev.type === 'content_block_delta') {
+      const b = st8.blocks[ev.index], d = ev.delta || {}; if (!b) return;
+      if (d.type === 'text_delta') { b.text = (b.text || '') + d.text; st8.chars += d.text.length; if (onProgress) onProgress(st8.chars); }
+      else if (d.type === 'input_json_delta') st8.json[ev.index] = (st8.json[ev.index] || '') + (d.partial_json || '');
+      else if (d.type === 'citations_delta') { (b.citations = b.citations || []).push(d.citation); }
+    } else if (ev.type === 'content_block_stop') {
+      const b = st8.blocks[ev.index];
+      if (b && st8.json[ev.index] !== undefined) { try { b.input = st8.json[ev.index] ? JSON.parse(st8.json[ev.index]) : (b.input || {}); } catch (e) { /* קלט חלקי */ } delete st8.json[ev.index]; }
+    } else if (ev.type === 'message_delta') {
+      if (ev.delta && ev.delta.stop_reason) st8.stop = ev.delta.stop_reason;
+    } else if (ev.type === 'error') {
+      const m = (ev.error && ev.error.message) || '';
+      throw { code: 'http', status: (ev.error && ev.error.type === 'overloaded_error') ? 529 : 500, message: m };
+    }
+  }
   async function callClaude(opts) {
     const key = getKey(); if (!key) throw { code: 'nokey' };
     const base = { model: st().model || MODELS[0][0], max_tokens: opts.maxTokens || 2000, messages: opts.messages };
     if (opts.system) base.system = opts.system;
     if (opts.search) base.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: opts.search }];
-    let msgs = opts.messages.slice(), content = [];
+    let msgs = opts.messages.slice(), content = [], soFar = 0;
     for (let round = 0; round < 5; round++) {
-      let res;
-      try {
-        res = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-          body: JSON.stringify(Object.assign({}, base, { messages: msgs }))
-        });
-      } catch (e) { throw { code: 'network' }; }
-      if (!res.ok) { let j = null; try { j = await res.json(); } catch (e) { /* גוף ריק */ } throw { code: 'http', status: res.status, message: (j && j.error && j.error.message) || '' }; }
-      const j = await res.json();
-      content = content.concat(j.content || []);
-      if (j.stop_reason === 'pause_turn') { msgs = msgs.concat([{ role: 'assistant', content: j.content }]); continue; }
-      return { content, stop: j.stop_reason };
+      const r = await streamOnce(key, Object.assign({}, base, { messages: msgs }), n => { if (opts.onProgress) opts.onProgress(soFar + n); });
+      soFar += textOf(r.content).length;
+      content = content.concat(r.content);
+      if (r.stop === 'pause_turn') { msgs = msgs.concat([{ role: 'assistant', content: r.content }]); continue; }
+      return { content, stop: r.stop };
     }
     return { content, stop: 'pause_turn' };
   }
@@ -1241,7 +1292,7 @@
   function errMessage(e) {
     if (!e) return 'אירעה שגיאה לא צפויה.';
     if (e.code === 'nokey') return 'לא הוזן מפתח API. הזן אותו בהגדרות.';
-    if (e.code === 'network') return 'אין חיבור לאינטרנט, או שהחיבור ל-Anthropic נחסם. נסה שוב כשתהיה מחובר.';
+    if (e.code === 'network') return 'החיבור ל-Anthropic נקטע באמצע. ודא שיש קליטה טובה ושהאפליקציה נשארת פתוחה על המסך עד הסיום, ונסה שוב.';
     if (e.code === 'cut') return 'התדריך נקטע באמצע הכתיבה. נסה שוב.';
     if (e.code === 'parse') return 'התשובה שהתקבלה לא הייתה במבנה תקין. נסה שוב.';
     if (e.code === 'http') {
@@ -1382,6 +1433,8 @@ ${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. �
 
   /* ---------- יצירת התדריך ---------- */
   let genBusy = false, genStageIdx = 0, genTimer = null, genExtra = false;
+  let genChars = 0;
+  function renderGenProgress() { const p = document.getElementById('gen-progress'); if (p) p.textContent = genChars ? 'נכתבו עד עכשיו כ-' + Math.round(genChars / 5) + ' מילים' : ''; else renderGenBanner(); }
   const GEN_STAGES = ['מחפש את החדשות של היום', 'בוחר את הנושא האקטואלי', 'כותב את נקודות הידע', 'מכין את משפטי האנגלית', 'בודק ומסדר את התדריך'];
   function canAutoGen() {
     const lg = st().lastGen;
@@ -1401,7 +1454,7 @@ ${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. �
     if (S.days[target]) { if (manual) toast('התדריך של היום כבר קיים.'); return; }
     if (!getKey()) { if (manual) toast('הזן קודם מפתח API.'); return; }
     try { const l = +localStorage.getItem(LOCK) || 0; if (!manual && Date.now() - l < 5 * 60 * 1000) return; localStorage.setItem(LOCK, String(Date.now())); } catch (e) { /* ignore */ }
-    genBusy = true; genStageIdx = 0; genExtra = !!extra;
+    genBusy = true; genStageIdx = 0; genExtra = !!extra; genChars = 0;
     let wake = null; try { if (navigator.wakeLock) wake = await navigator.wakeLock.request('screen'); } catch (e) { /* לא נתמך */ }
     if (extra) { st().lastExtra = null; save(); }
     genTimer = setInterval(() => { genStageIdx = Math.min(genStageIdx + 1, GEN_STAGES.length - 1); renderGenBanner(); }, 20000);
@@ -1409,14 +1462,14 @@ ${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. �
     const ctx = buildContext();
     ctx.target = target; ctx.extra = !!extra; if (extra) ctx.isFriday = false;
     try {
-      const r1 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: corePrompt(ctx) }], maxTokens: 16000, search: 5 });
+      const r1 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: corePrompt(ctx) }], maxTokens: 16000, search: 5, onProgress: n => { genChars = n; if (genStageIdx < 2) genStageIdx = 2; renderGenProgress(); } });
       if (r1.stop === 'max_tokens') throw { code: 'cut' };
       const core = parseJSON(textOf(r1.content));
       if (!core || !core.day || !Array.isArray(core.knowledge) || core.knowledge.length < 5) throw { code: 'parse' };
       let lang = { english: [], quotes: [], weekly: null };
       if (!extra) {
         genStageIdx = Math.max(genStageIdx, 3); renderGenBanner();
-        const r2 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: langPrompt(ctx, core) }], maxTokens: 8000 });
+        const r2 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: langPrompt(ctx, core) }], maxTokens: 8000, onProgress: n => { genChars = n; renderGenProgress(); } });
         if (r2.stop === 'max_tokens') throw { code: 'cut' };
         lang = parseJSON(textOf(r2.content));
       }
@@ -1446,6 +1499,7 @@ ${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. �
     if (genBusy) {
       const h = el('h3'); h.append(el('span', 'spin'), document.createTextNode(GEN_STAGES[genStageIdx] + '…'));
       b.append(h, el('p', 'he', (genExtra ? 'התדריך הנוסף' : 'תדריך הבוקר') + ' נכתב עכשיו. זה לוקח בדרך כלל דקה עד שלוש. השאר את האפליקציה פתוחה עד הסיום.'));
+      const pg = el('p', 'nextrev'); pg.id = 'gen-progress'; pg.textContent = genChars ? 'נכתבו עד עכשיו כ-' + Math.round(genChars / 5) + ' מילים' : ''; b.append(pg);
       b.hidden = false; return;
     }
     if (lx && !lx.ok && Date.now() - new Date(lx.at) < 6 * 3600e3) {

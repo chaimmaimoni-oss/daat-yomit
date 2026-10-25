@@ -1519,10 +1519,14 @@ ${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. 
     $('#btn-test').disabled = !has;
     $('#btn-key-del').hidden = !has;
     const lg = st().lastGen;
-    if (!$('#gen-status').textContent || /^(התדריך האחרון|ניסיון אחרון)/.test($('#gen-status').textContent)) {
+    const lx = st().lastExtra;
+    if (lx && (!$('#gen-status').textContent || /^(התדריך האחרון|ניסיון אחרון|תדריך נוסף)/.test($('#gen-status').textContent))) {
+      $('#gen-status').textContent = genBusy ? '' : lx.ok ? 'תדריך נוסף נוצר בהצלחה, ' + new Date(lx.at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }) : 'תדריך נוסף נכשל (' + new Date(lx.at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }) + '): ' + lx.error;
+    } else if (!$('#gen-status').textContent || /^(התדריך האחרון|ניסיון אחרון)/.test($('#gen-status').textContent)) {
       $('#gen-status').textContent = genBusy ? '' : lg ? (lg.ok ? 'התדריך האחרון נוצר ב-' + heDate(isoLocal(new Date(lg.at))) + ', ' + new Date(lg.at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' }) : 'ניסיון אחרון נכשל: ' + lg.error) : '';
     }
     $('#req-sec').hidden = has;
+    const vm = document.querySelector('meta[name=daat-version]'); $('#app-version').textContent = 'גרסה ' + (vm ? vm.content : '?') + ' · מפתח ' + (has ? 'שמור' : 'חסר') + ' · מודל ' + (st().model || '');
   }
 
   /* ======================================================================

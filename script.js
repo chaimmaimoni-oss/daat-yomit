@@ -1495,7 +1495,8 @@ ${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. 
 
   function renderAutoSettings() {
     const has = !!getKey();
-    $('#key-status').textContent = has ? 'מפתח שמור במכשיר: ••••' + getKey().slice(-4) : 'לא הוזן מפתח.';
+    $('#key-status').textContent = has ? '✓ המפתח שמור בדפדפן הזה (מסתיים ב-' + getKey().slice(-4) + '). השדה מוצג ריק בכוונה, כדי שהמפתח לא ייחשף.' : 'לא הוזן מפתח בדפדפן הזה.';
+    $('#key-status').className = has ? 'key-ok' : 'nextrev';
     $('#api-key').placeholder = has ? 'להחלפת המפתח, הדבק מפתח חדש' : 'sk-ant-...';
     $('#model-select').value = st().model;
     $('#hour-select').value = String(st().hour || 0);

@@ -467,3 +467,5 @@ select.field.wide{width:100%;min-height:44px;font-size:1rem}
 .masthead{box-shadow:0 0 0 100vmax var(--bg),0 8px 24px -18px rgba(0,0,0,.4)}
 .hero{box-shadow:0 24px 50px -30px rgba(6,10,19,.6)}
 .hero .astrolabe{opacity:.24}
+
+.key-ok{font-size:.88rem;font-weight:700;color:var(--emerald);background:color-mix(in srgb,var(--emerald) 10%,transparent);border:1px solid color-mix(in srgb,var(--emerald) 30%,transparent);border-radius:10px;padding:8px 12px}

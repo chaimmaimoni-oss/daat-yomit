@@ -1537,12 +1537,13 @@ ${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. 
     }
     function draw(t) {
       ctx.clearRect(0, 0, W, H);
-      ctx.lineWidth = .6; ctx.strokeStyle = 'rgba(226,191,115,.16)';
+      const cs = getComputedStyle(hero), cStar = cs.getPropertyValue('--star').trim() || '#EAF0FA', cGold = cs.getPropertyValue('--star-gold').trim() || '#F3D893';
+      ctx.lineWidth = .6; ctx.strokeStyle = cs.getPropertyValue('--star-link').trim() || 'rgba(226,191,115,.18)';
       links.forEach(([a, b]) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); });
       stars.forEach(st => {
         const tw = still ? .8 : .55 + .45 * Math.sin(st.p + t / 1000 * st.v);
         ctx.globalAlpha = tw;
-        ctx.fillStyle = st.g ? '#F1D58F' : '#E9EEF8';
+        ctx.fillStyle = st.g ? cGold : cStar;
         ctx.beginPath(); ctx.arc(st.x, st.y, st.r, 0, 6.283); ctx.fill();
         if (st.r > 1.4) { ctx.globalAlpha = tw * .25; ctx.beginPath(); ctx.arc(st.x, st.y, st.r * 3.2, 0, 6.283); ctx.fill(); }
       });

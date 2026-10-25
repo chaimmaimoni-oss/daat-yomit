@@ -1362,7 +1362,7 @@ ${c.extra ? 'זהו תדריך נוסף שהלומד ביקש היום, מעבר
 - בקשות "תלמד אותי על..." ממתינות: ${c.pending.length ? JSON.stringify(c.pending) : 'אין'}
 
 כללים:
-- knowledge: בדיוק 7 פריטים, ב-7 תחומים שונים. לפחות 2 קשורים ישירות לנושא האקטואלי. תחומים חלשים ומוזנחים מקבלים עדיפות.
+- knowledge: בדיוק 4 פריטים (3 נוספים ייכתבו בשלב הבא), ב-4 תחומים שונים. לפחות 2 קשורים ישירות לנושא האקטואלי. תחומים חלשים ומוזנחים מקבלים עדיפות.
 - לכל בקשה ממתינה הקדש נקודת ידע אחת, עם השדה requestId שמכיל את מזהה הבקשה, והזכר זאת בקצרה ב-intro. רשום את מזהי הבקשות שנענו ב-requestsDone.
 - ערכי domain המותרים: ${doms}.
 - פסקאות בתוך שדה טקסט מופרדות ב-\\n.
@@ -1374,6 +1374,25 @@ ${c.extra ? 'זהו תדריך נוסף שהלומד ביקש היום, מעבר
   "knowledge": [{"domain": "", "title": "", "question": "שאלת חזרה קצרה", "content": "2-3 פסקאות קצרות", "why": "משפט או שניים", "how": "משפט או שניים: איך משתמשים בזה בשיחה, בנאום או בהנהגה", "deepen": {"directions": ["כיוון העמקה", "כיוון העמקה"], "sources": ["מקור מדויק"]}, "requestId": ""}],
   "requestsDone": []
 }`;
+  }
+  /* חלק א2: עוד 3 נקודות ידע (בלי חיפוש), כדי שכל קריאה תהיה קצרה ולא תיקטע */
+  function morePrompt(c, core) {
+    const doms = Object.entries(DOMAINS).map(([k, v]) => k + ' = ' + v).join(', ');
+    const used = core.knowledge.map(k => k.domain + ': ' + k.title).join(' | ');
+    return promptHead(c) + `
+הנושא האקטואלי של התדריך: ${core.day.topic}
+${core.day.intro || ''}
+נקודות הידע שכבר נכתבו בתדריך הזה: ${used}
+
+כתוב עוד בדיוק 3 נקודות ידע, ב-3 תחומים שונים זה מזה ושונים מהתחומים שכבר נכתבו. תמציתי ומדויק: כל פסקה 2-3 משפטים.
+- תחומים חלשים (עדיפות): ${c.weak.length ? c.weak.join(', ') : 'אין עדיין'}
+- תחומים שלא הופיעו בשבוע האחרון: ${c.neglected.join(', ') || 'אין'}
+- נקודות שכבר נלמדו (אסור לחזור): ${c.recentK.join(' | ') || 'אין'}
+- ערכי domain המותרים: ${doms}.
+- פסקאות בתוך שדה טקסט מופרדות ב-\\n.
+
+החזר JSON בלבד במבנה:
+{"knowledge": [{"domain": "", "title": "", "question": "שאלת חזרה קצרה", "content": "2-3 פסקאות קצרות", "why": "משפט או שניים", "how": "משפט או שניים", "deepen": {"directions": ["כיוון העמקה", "כיוון העמקה"], "sources": ["מקור מדויק"]}}]}`;
   }
   /* חלק ב: משפטי אנגלית, ציטוטים וסיכום שבועי (בלי חיפוש) */
   function langPrompt(c, core) {
@@ -1462,14 +1481,21 @@ ${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. �
     const ctx = buildContext();
     ctx.target = target; ctx.extra = !!extra; if (extra) ctx.isFriday = false;
     try {
-      const r1 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: corePrompt(ctx) }], maxTokens: 16000, search: 5, onProgress: n => { genChars = n; if (genStageIdx < 2) genStageIdx = 2; renderGenProgress(); } });
+      const r1 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: corePrompt(ctx) }], maxTokens: 32000, search: 5, onProgress: n => { genChars = n; if (genStageIdx < 2) genStageIdx = 2; renderGenProgress(); } });
       if (r1.stop === 'max_tokens') throw { code: 'cut' };
       const core = parseJSON(textOf(r1.content));
-      if (!core || !core.day || !Array.isArray(core.knowledge) || core.knowledge.length < 5) throw { code: 'parse' };
+      if (!core || !core.day || !Array.isArray(core.knowledge) || core.knowledge.length < 3) throw { code: 'parse' };
+      if (core.knowledge.length < 7) {
+        const base = genChars;
+        const rm = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: morePrompt(ctx, core) }], maxTokens: 16000, onProgress: n => { genChars = base + n; renderGenProgress(); } });
+        const more = rm.stop === 'max_tokens' ? null : parseJSON(textOf(rm.content));
+        if (more && Array.isArray(more.knowledge)) core.knowledge = core.knowledge.concat(more.knowledge).slice(0, 7);
+        if (core.knowledge.length < 5) throw { code: rm.stop === 'max_tokens' ? 'cut' : 'parse' };
+      }
       let lang = { english: [], quotes: [], weekly: null };
       if (!extra) {
         genStageIdx = Math.max(genStageIdx, 3); renderGenBanner();
-        const r2 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: langPrompt(ctx, core) }], maxTokens: 8000, onProgress: n => { genChars = n; renderGenProgress(); } });
+        const r2 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: langPrompt(ctx, core) }], maxTokens: 16000, onProgress: n => { genChars = n; renderGenProgress(); } });
         if (r2.stop === 'max_tokens') throw { code: 'cut' };
         lang = parseJSON(textOf(r2.content));
       }

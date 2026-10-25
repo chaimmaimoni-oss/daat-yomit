@@ -390,7 +390,18 @@
     const d = currentDate && S.days[currentDate];
     $('#hero').hidden = !d;
     if (!d) { $('#daynum').hidden = true; setDates(today); return; }
-    t.append(el('div', 'eyebrow', 'הנושא של היום'), el('h1', null, d.topic || ''));
+    const asc0 = daysList().reverse(), pos = asc0.findIndex(x => x.date === currentDate);
+    const nav = el('div', 'daynav');
+    const mkNav = (cls, label, aria, target, dis) => { const b = el('button', 'dn-btn ' + cls, label); b.type = 'button'; b.setAttribute('aria-label', aria); b.disabled = !!dis; b.addEventListener('click', () => goDay(target)); return b; };
+    const prev = asc0[pos - 1], next = asc0[pos + 1];
+    nav.append(mkNav('prev', '›', 'היום הקודם', prev && prev.date, !prev));
+    const lbl = el('span', 'dn-label', currentDate === today ? 'התדריך של היום' : (currentDate > today ? 'תדריך נוסף · ' : '') + weekday(currentDate) + ', ' + heDate(currentDate));
+    nav.append(lbl, mkNav('next', '‹', 'היום הבא', next && next.date, !next));
+    const add = el('button', 'dn-add', genBusy ? 'נכתב תדריך…' : '+ תדריך נוסף'); add.type = 'button'; add.disabled = genBusy;
+    add.addEventListener('click', generateExtra);
+    nav.append(add);
+    t.append(nav);
+    t.append(el('div', 'eyebrow', currentDate > today ? 'נושא התדריך' : 'הנושא של היום'), el('h1', null, d.topic || ''));
     if (d.intro) t.append(el('p', 'intro', d.intro));
     const k = dayItems().filter(i => i.type === 'knowledge');
     const done = k.filter(isLearned).length;
@@ -400,6 +411,12 @@
     const asc = daysList().reverse();
     const dn = $('#daynum'); dn.textContent = 'יום ' + (asc.findIndex(x => x.date === currentDate) + 1); dn.hidden = false;
     setDates(currentDate);
+  }
+
+  function goDay(dt) {
+    if (!dt || !S.days[dt]) return;
+    currentDate = dt; practice = null; answerDraft = { date: null, text: '', dirty: false };
+    renderAll(); window.scrollTo(0, 0);
   }
 
   function renderCards() {
@@ -1278,7 +1295,7 @@
     const doms = Object.entries(DOMAINS).map(([k, v]) => k + ' = ' + v).join(', ');
     return `היום ${weekday(today)}, ${gregDate(today)} (${hebDate(today)}). התאריך בפורמט ISO: ${today}.
 
-שלב 1: חפש ברשת את החדשות המרכזיות של היום בישראל ובעולם, בעברית ובאנגלית. בחר נושא אקטואלי מרכזי אחד, עמוק ולא רכילותי. הנושא משתנה לפי המציאות.
+${c.extra ? 'זהו תדריך נוסף שהלומד ביקש היום, מעבר לתדריך היומי. בחר נושא אקטואלי אחר מכל הנושאים שכבר הופיעו, וגוון בתחומים.\n' : ''}שלב 1: חפש ברשת את החדשות המרכזיות של היום בישראל ובעולם, בעברית ובאנגלית. בחר נושא אקטואלי מרכזי אחד, עמוק ולא רכילותי. הנושא משתנה לפי המציאות.
 שלב 2: כתוב את התדריך במבנה ה-JSON שלהלן.
 
 מצב הלומד:
@@ -1315,7 +1332,7 @@ ${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. 
 
   function toBlock(o, c) {
     if (!o || !o.day || !o.day.topic || !Array.isArray(o.knowledge) || o.knowledge.length < 5 || !Array.isArray(o.english) || o.english.length < 5) throw { code: 'parse' };
-    const d = today, dom = x => DOMAINS[x] ? x : 'current';
+    const d = c.target || today, dom = x => DOMAINS[x] ? x : 'current';
     const items = [];
     o.knowledge.slice(0, 8).forEach((k, i) => {
       const it = { id: d + '-k' + (i + 1), date: d, type: 'knowledge', order: i + 1, domain: dom(k.domain), title: clean(k.title), question: clean(k.question), content: clean(k.content), why: clean(k.why), how: clean(k.how) };
@@ -1352,24 +1369,35 @@ ${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. 
     const failedOften = lg && lg.date === today && !lg.ok && (lg.failCount || 0) >= 3;
     return st().auto !== false && !!getKey() && !S.days[today] && new Date().getHours() >= (st().hour || 0) && !failedOften;
   }
-  async function generateToday(manual) {
+  /* התאריך הפנוי הבא לתדריך נוסף */
+  function nextFreeDate() { let t = today; while (S.days[t]) t = addDays(t, 1); return t; }
+  function generateExtra() {
+    if (genBusy) { toast('תדריך כבר נכתב עכשיו. המתן לסיומו.'); return; }
+    if (!getKey()) { toast('כדי ליצור תדריך נוסף, הזן מפתח API בהגדרות.'); return; }
+    return generateDay(nextFreeDate(), true, true);
+  }
+  function generateToday(manual) { return generateDay(today, manual, false); }
+  async function generateDay(target, manual, extra) {
     if (genBusy) return;
-    if (S.days[today]) { if (manual) toast('התדריך של היום כבר קיים.'); return; }
+    if (S.days[target]) { if (manual) toast('התדריך של היום כבר קיים.'); return; }
     if (!getKey()) { if (manual) toast('הזן קודם מפתח API.'); return; }
     try { const l = +localStorage.getItem(LOCK) || 0; if (!manual && Date.now() - l < 5 * 60 * 1000) return; localStorage.setItem(LOCK, String(Date.now())); } catch (e) { /* ignore */ }
     genBusy = true; genStageIdx = 0;
     genTimer = setInterval(() => { genStageIdx = Math.min(genStageIdx + 1, GEN_STAGES.length - 1); renderGenBanner(); }, 20000);
     renderAll();
     const ctx = buildContext();
+    ctx.target = target; ctx.extra = !!extra; if (extra) ctx.isFriday = false;
     try {
       const r = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: briefPrompt(ctx) }], maxTokens: 20000, search: 6 });
       if (r.stop === 'max_tokens') throw { code: 'cut' };
       const block = toBlock(parseJSON(textOf(r.content)), ctx);
       mergeContent(block, false);
-      st().lastGen = { date: today, at: new Date().toISOString(), ok: true };
-      save(); currentDate = pickDate(); practice = null;
-      toast('התדריך של היום מוכן');
+      if (!extra) st().lastGen = { date: today, at: new Date().toISOString(), ok: true };
+      save(); currentDate = extra ? target : pickDate(); practice = null; answerDraft = { date: null, text: '', dirty: false };
+      toast(extra ? 'התדריך הנוסף מוכן' : 'התדריך של היום מוכן');
+      if (extra) window.scrollTo(0, 0);
     } catch (e) {
+      if (extra) { toast(errMessage(e)); return; }
       const prev = st().lastGen;
       st().lastGen = { date: today, at: new Date().toISOString(), ok: false, error: errMessage(e), failCount: (prev && prev.date === today && !prev.ok ? (prev.failCount || 1) + 1 : 1) };
       save();

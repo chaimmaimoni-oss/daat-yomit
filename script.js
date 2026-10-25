@@ -355,7 +355,9 @@
   save();
 
   const daysList = () => Object.values(S.days).sort((a, b) => a.date < b.date ? 1 : -1);
-  const itemsList = () => Object.values(S.items);
+  /* האנגלית מושבתת כרגע לבקשת הלומד. הנתונים נשמרים; להחזרה: EN_ON = true */
+  const EN_ON = false;
+  const itemsList = () => EN_ON ? Object.values(S.items) : Object.values(S.items).filter(i => i.type !== 'english');
   function pickDate() { const ds = daysList(); if (!ds.length) return null; return (ds.find(x => x.date <= today) || ds[ds.length - 1]).date; }
   let currentDate = pickDate();
   const dayItems = () => itemsList().filter(i => i.date === currentDate);
@@ -876,7 +878,7 @@
      ====================================================================== */
   let arFilter = 'all', arDomain = '', arQuery = '';
   const openIds = new Set();
-  const FILTERS = [['all', 'הכל'], ['fav', '★ מועדפים'], ['knowledge', 'ידע'], ['english', 'אנגלית'], ['quotes', 'ציטוטים'], ['answers', 'התשובות שלי']];
+  const FILTERS = [['all', 'הכל'], ['fav', '★ מועדפים'], ['knowledge', 'ידע'], ['quotes', 'ציטוטים'], ['answers', 'התשובות שלי']];
   const fb = $('#ar-filters');
   FILTERS.forEach(([k, l]) => {
     const b = el('button', null, l); b.type = 'button'; b.dataset.f = k; b.setAttribute('aria-pressed', k === arFilter);
@@ -1045,7 +1047,7 @@
     });
     const names = Object.assign({}, DOMAINS, { english: 'אנגלית' });
     const keys = Object.keys(agg).sort((x, y) => agg[x].sum / agg[x].n - agg[y].sum / agg[y].n);
-    if (!keys.length) ds.append(el('p', 'he', 'עוד אין דירוגים. דרג כרטיסים במסך "היום", בתרגול האנגלית ובחזרה, והתמונה תתמלא כאן.'));
+    if (!keys.length) ds.append(el('p', 'he', 'עוד אין דירוגים. דרג כרטיסים במסך "היום" ובחזרה, והתמונה תתמלא כאן.'));
     else {
       const rows = el('div', 'drows');
       keys.forEach(k => {
@@ -1416,24 +1418,23 @@ ${core.day.intro || ''}
 נקודות הידע בתדריך:
 ${kn}
 
-כתוב את חלק השפה של התדריך במבנה ה-JSON שלהלן.
-- מילות מפתח באנגלית שכבר נלמדו (אסור לחזור): ${c.recentE.join(' | ') || 'אין'}
+כתוב את חלק ${EN_ON ? 'השפה' : 'הציטוטים'} של התדריך במבנה ה-JSON שלהלן.
+${EN_ON ? `- מילות מפתח באנגלית שכבר נלמדו (אסור לחזור): ${c.recentE.join(' | ') || 'אין'}
 - english: בדיוק 4 משפטים ברמה גבוהה ומתקדמת (C1), מעולמות המנהיגות, הניהול, הרטוריקה, הפילוסופיה והדיפלומטיה, וקשורים לנושא ולנקודות הידע. מילת המפתח חייבת להופיע ככתבה בתוך המשפט. אם יש שתי מילות מפתח, הפרד ביניהן ב-" · ".
 - gloss: לכל משפט, פירוש מילה במילה של המשפט הראשי (en), לפי סדר המילים, בתבנית word=פירוש|word=פירוש. כל מילה במשפט מופיעה, בלי סימני פיסוק. ביטוי קבוע כיחידה אחת. a/an: (סתמי). the: ה־. מילת עזר בלי מקבילה: הסבר קצר בסוגריים.
-- quotes: 1 או 2 ציטוטים מאומתים בלבד, קצרים, ממקורות קלאסיים, מחז"ל, ממדינאים או מהוגים. אם אין ודאות בנוסח או במקור, אל תכלול.
+` : ''}- quotes: 1 או 2 ציטוטים מאומתים בלבד, קצרים, ממקורות קלאסיים, מחז"ל, ממדינאים או מהוגים. אם אין ודאות בנוסח או במקור, אל תכלול.
 - ערכי domain המותרים: ${doms}.
-${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. נקודות הידע של השבוע: ' + (c.weekItems.concat((core.knowledge || []).map(k => k.title)).join(' | ') || 'אין') + '. ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות; לפחות שאלה אחת על אנגלית עם "ltr": true; פזר את התשובות הנכונות בין המיקומים.' : ''}
+${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. נקודות הידע של השבוע: ' + (c.weekItems.concat((core.knowledge || []).map(k => k.title)).join(' | ') || 'אין') + '. ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות' + (EN_ON ? '; לפחות שאלה אחת על אנגלית עם "ltr": true' : '') + '; פזר את התשובות הנכונות בין המיקומים.' : ''}
 
 מבנה הפלט:
 {
-  "english": [{"domain": "", "en": "", "he": "", "gloss": "Word=פירוש|word=פירוש", "keyword": "", "keywordHe": "", "example": "משפט נוסף באנגלית עם מילת המפתח", "exampleHe": ""}],
-  "quotes": [{"domain": "", "text": "", "source": "", "note": "איך משתמשים בציטוט"}],
+${EN_ON ? '  "english": [{"domain": "", "en": "", "he": "", "gloss": "Word=פירוש|word=פירוש", "keyword": "", "keywordHe": "", "example": "משפט נוסף באנגלית עם מילת המפתח", "exampleHe": ""}],\n' : ''}  "quotes": [{"domain": "", "text": "", "source": "", "note": "איך משתמשים בציטוט"}],
   "weekly": ${c.isFriday ? '{"note": "משפט פתיחה לסיכום", "ideas": [{"domain": "", "title": "", "text": ""}], "quiz": [{"q": "", "options": ["", "", "", ""], "answer": 0, "explain": "", "ltr": false}]}' : 'null'}
 }`;
   }
 
   function toBlock(o, c) {
-    if (!o || !o.day || !o.day.topic || !Array.isArray(o.knowledge) || o.knowledge.length < 5 || (!c.extra && (!Array.isArray(o.english) || o.english.length < 3))) throw { code: 'parse' };
+    if (!o || !o.day || !o.day.topic || !Array.isArray(o.knowledge) || o.knowledge.length < 5 || (EN_ON && !c.extra && (!Array.isArray(o.english) || o.english.length < 3))) throw { code: 'parse' };
     const d = c.target || today, dom = x => DOMAINS[x] ? x : 'current';
     const items = [];
     o.knowledge.slice(0, 8).forEach((k, i) => {
@@ -1442,7 +1443,7 @@ ${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. �
       if (k.requestId) it.requestId = String(k.requestId);
       items.push(it);
     });
-    (Array.isArray(o.english) ? o.english : []).slice(0, 4).forEach((e, i) => {
+    (EN_ON && Array.isArray(o.english) ? o.english : []).slice(0, 4).forEach((e, i) => {
       if (!e || !e.en) return;
       const it = { id: d + '-e' + (i + 1), date: d, type: 'english', order: i + 1, domain: dom(e.domain), title: e.keyword || '', en: e.en, he: e.he || '', keyword: e.keyword || '', keywordHe: e.keywordHe || '', example: e.example || '', exampleHe: e.exampleHe || '' };
       const g = parseGloss(e.gloss); if (g.length >= 2) it.gloss = g;
@@ -1467,7 +1468,7 @@ ${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. �
   let genBusy = false, genStageIdx = 0, genTimer = null, genExtra = false;
   let genChars = 0;
   function renderGenProgress() { const p = document.getElementById('gen-progress'); if (p) p.textContent = genChars ? 'נכתבו עד עכשיו כ-' + Math.round(genChars / 5) + ' מילים' : ''; else renderGenBanner(); }
-  const GEN_STAGES = ['מחפש את החדשות של היום', 'בוחר את הנושא האקטואלי', 'כותב את נקודות הידע', 'מכין את משפטי האנגלית', 'בודק ומסדר את התדריך'];
+  const GEN_STAGES = ['מחפש את החדשות של היום', 'בוחר את הנושא האקטואלי', 'כותב את נקודות הידע', (EN_ON ? 'מכין את משפטי האנגלית' : 'מוסיף ציטוטים'), 'בודק ומסדר את התדריך'];
   function canAutoGen() {
     const lg = st().lastGen;
     const failedOften = lg && lg.date === today && !lg.ok && (lg.failCount || 0) >= 3;
@@ -1653,6 +1654,7 @@ ${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. �
   /* ======================================================================
      ניווט
      ====================================================================== */
+  if (!EN_ON) { const tb = document.querySelector('.tab[data-tab="english"]'); if (tb) tb.hidden = true; const vs = document.getElementById('voice-sec'); if (vs) vs.hidden = true; }
   const VIEWS = ['today', 'english', 'review', 'archive', 'progress', 'settings'];
   let tab = 'today';
   function show(name) {

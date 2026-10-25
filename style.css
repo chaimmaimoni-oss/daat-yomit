@@ -188,7 +188,7 @@ button{font:inherit;color:inherit}
   border-top:1px solid var(--line);
   padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
 .tabbar::before{content:"";position:absolute;inset:-1px 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);opacity:.4}
-.tabbar .in{max-width:660px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);height:var(--tabbar-h)}
+.tabbar .in{max-width:660px;margin:0 auto;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;height:var(--tabbar-h)}
 .tab{position:relative;border:0;background:none;display:grid;justify-items:center;align-content:center;gap:4px;font-size:.74rem;font-weight:700;letter-spacing:.03em;color:var(--faint);cursor:pointer;transition:color .2s}
 .tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
 .tab:hover{color:var(--muted)}
@@ -472,3 +472,5 @@ select.field.wide{width:100%;min-height:44px;font-size:1rem}
 
 /* הסתרת תג האירוח של Netlify, שמסתיר את סרגל הלשוניות */
 #nl-badge-frame,iframe[id^="nl-badge"],iframe[src*="/.netlify/"]{display:none!important;visibility:hidden!important;pointer-events:none!important;width:0!important;height:0!important}
+
+.tab[hidden],.set-sec[hidden]{display:none!important}

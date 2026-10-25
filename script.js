@@ -1291,43 +1291,62 @@
     const weekItems = isFriday ? all.filter(i => i.type === 'knowledge' && i.date >= week && i.date < today).map(i => i.title + ' (' + (DOMAINS[i.domain] || '') + ')') : [];
     return { recentK, recentE, recentModels, recentTopics, weak, neglected, pending, isFriday, week, weekItems };
   }
-  function briefPrompt(c) {
-    const doms = Object.entries(DOMAINS).map(([k, v]) => k + ' = ' + v).join(', ');
+  function promptHead(c) {
     return `היום ${weekday(today)}, ${gregDate(today)} (${hebDate(today)}). התאריך בפורמט ISO: ${today}.
-
-${c.extra ? 'זהו תדריך נוסף שהלומד ביקש היום, מעבר לתדריך היומי. בחר נושא אקטואלי אחר מכל הנושאים שכבר הופיעו, וגוון בתחומים.\n' : ''}שלב 1: חפש ברשת את החדשות המרכזיות של היום בישראל ובעולם, בעברית ובאנגלית. בחר נושא אקטואלי מרכזי אחד, עמוק ולא רכילותי. הנושא משתנה לפי המציאות.
-שלב 2: כתוב את התדריך במבנה ה-JSON שלהלן.
+${c.extra ? 'זהו תדריך נוסף שהלומד ביקש היום, מעבר לתדריך היומי. בחר נושא אקטואלי אחר מכל הנושאים שכבר הופיעו, וגוון בתחומים.\n' : ''}`;
+  }
+  /* חלק א: נושא, הקדמה, להעמקה ו-7 נקודות ידע (עם חיפוש ברשת) */
+  function corePrompt(c) {
+    const doms = Object.entries(DOMAINS).map(([k, v]) => k + ' = ' + v).join(', ');
+    return promptHead(c) + `
+שלב 1: חפש ברשת את החדשות המרכזיות של היום בישראל ובעולם, בעברית ובאנגלית. בחר נושא אקטואלי מרכזי אחד, עמוק ולא רכילותי. הנושא משתנה לפי המציאות.
+שלב 2: כתוב את חלק הידע של התדריך במבנה ה-JSON שלהלן. תמציתי ומדויק: כל פסקה 2-3 משפטים.
 
 מצב הלומד:
 - תחומים חלשים (לתת עדיפות, בנקודה חדשה ופשוטה יותר): ${c.weak.length ? c.weak.join(', ') : 'אין עדיין'}
 - תחומים שלא הופיעו בשבוע האחרון: ${c.neglected.join(', ') || 'אין'}
 - נושאים אקטואליים מהזמן האחרון (לא לחזור): ${c.recentTopics.join(' | ') || 'אין'}
 - נקודות ידע שכבר נלמדו (אסור לחזור עליהן): ${c.recentK.join(' | ') || 'אין'}
-- מילות מפתח באנגלית שכבר נלמדו (אסור לחזור): ${c.recentE.join(' | ') || 'אין'}
 - מודלי חשיבה שכבר הוצגו: ${c.recentModels.join(' | ') || 'אין'}
 - בקשות "תלמד אותי על..." ממתינות: ${c.pending.length ? JSON.stringify(c.pending) : 'אין'}
-${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. נקודות הידע של השבוע עד אתמול: ' + (c.weekItems.join(' | ') || 'אין') + ', ובנוסף נקודות הידע של היום.' : ''}
 
 כללים:
 - knowledge: בדיוק 7 פריטים, ב-7 תחומים שונים. לפחות 2 קשורים ישירות לנושא האקטואלי. תחומים חלשים ומוזנחים מקבלים עדיפות.
 - לכל בקשה ממתינה הקדש נקודת ידע אחת, עם השדה requestId שמכיל את מזהה הבקשה, והזכר זאת בקצרה ב-intro. רשום את מזהי הבקשות שנענו ב-requestsDone.
-- english: בדיוק 8 משפטים ברמה גבוהה ומתקדמת (C1), מעולמות המנהיגות, הניהול, הרטוריקה, הפילוסופיה והדיפלומטיה, וקשורים לנושא היום. מילת המפתח חייבת להופיע ככתבה בתוך המשפט. אם יש שתי מילות מפתח, הפרד ביניהן ב-" · ".
-- gloss: לכל משפט אנגלית פירוש מילה במילה של המשפט הראשי (en), לפי סדר המילים, בתבנית word=פירוש|word=פירוש. כל מילה במשפט מופיעה, בלי סימני פיסוק. ביטוי קבוע כיחידה אחת. a/an: (סתמי). the: ה־. מילת עזר בלי מקבילה: הסבר קצר בסוגריים.
-- quotes: 1 או 2 ציטוטים מאומתים בלבד, קצרים, ממקורות קלאסיים, מחז"ל, ממדינאים או מהוגים.
 - ערכי domain המותרים: ${doms}.
 - פסקאות בתוך שדה טקסט מופרדות ב-\\n.
 
 מבנה הפלט:
 {
   "day": {"topic": "כותרת הנושא, עד 12 מילים", "intro": "2-3 משפטים"},
-  "extras": {"model": {"title": "מודל חשיבה", "body": "הסבר עם דוגמה, 2-3 פסקאות"}, "question": "שאלה למחשבה שמחייבת לגבש עמדה", "challenge": "אתגר דיבור של דקה, עם עצה"},
-  "knowledge": [{"domain": "", "title": "", "question": "שאלת חזרה קצרה", "content": "2-4 פסקאות", "why": "למה זה חשוב", "how": "איך משתמשים בזה בשיחה, בנאום או בהנהגה", "deepen": {"directions": ["כיוון העמקה", "כיוון העמקה"], "sources": ["מקור מדויק"]}, "requestId": ""}],
+  "extras": {"model": {"title": "מודל חשיבה", "body": "הסבר עם דוגמה, 2 פסקאות"}, "question": "שאלה למחשבה שמחייבת לגבש עמדה", "challenge": "אתגר דיבור של דקה, עם עצה"},
+  "knowledge": [{"domain": "", "title": "", "question": "שאלת חזרה קצרה", "content": "2-3 פסקאות קצרות", "why": "משפט או שניים", "how": "משפט או שניים: איך משתמשים בזה בשיחה, בנאום או בהנהגה", "deepen": {"directions": ["כיוון העמקה", "כיוון העמקה"], "sources": ["מקור מדויק"]}, "requestId": ""}],
+  "requestsDone": []
+}`;
+  }
+  /* חלק ב: משפטי אנגלית, ציטוטים וסיכום שבועי (בלי חיפוש) */
+  function langPrompt(c, core) {
+    const doms = Object.keys(DOMAINS).join(', ');
+    const kn = (core.knowledge || []).map(k => '- ' + k.title + ' (' + k.domain + ')').join('\n');
+    return promptHead(c) + `
+נושא התדריך: ${core.day && core.day.topic}
+נקודות הידע בתדריך:
+${kn}
+
+כתוב את חלק השפה של התדריך במבנה ה-JSON שלהלן.
+- מילות מפתח באנגלית שכבר נלמדו (אסור לחזור): ${c.recentE.join(' | ') || 'אין'}
+- english: בדיוק 8 משפטים ברמה גבוהה ומתקדמת (C1), מעולמות המנהיגות, הניהול, הרטוריקה, הפילוסופיה והדיפלומטיה, וקשורים לנושא ולנקודות הידע. מילת המפתח חייבת להופיע ככתבה בתוך המשפט. אם יש שתי מילות מפתח, הפרד ביניהן ב-" · ".
+- gloss: לכל משפט, פירוש מילה במילה של המשפט הראשי (en), לפי סדר המילים, בתבנית word=פירוש|word=פירוש. כל מילה במשפט מופיעה, בלי סימני פיסוק. ביטוי קבוע כיחידה אחת. a/an: (סתמי). the: ה־. מילת עזר בלי מקבילה: הסבר קצר בסוגריים.
+- quotes: 1 או 2 ציטוטים מאומתים בלבד, קצרים, ממקורות קלאסיים, מחז"ל, ממדינאים או מהוגים. אם אין ודאות בנוסח או במקור, אל תכלול.
+- ערכי domain המותרים: ${doms}.
+${c.isFriday ? '- היום יום שישי. צרף גם סיכום שבועי. נקודות הידע של השבוע: ' + (c.weekItems.concat((core.knowledge || []).map(k => k.title)).join(' | ') || 'אין') + '. ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות; לפחות שאלה אחת על אנגלית עם "ltr": true; פזר את התשובות הנכונות בין המיקומים.' : ''}
+
+מבנה הפלט:
+{
   "english": [{"domain": "", "en": "", "he": "", "gloss": "Word=פירוש|word=פירוש", "keyword": "", "keywordHe": "", "example": "משפט נוסף באנגלית עם מילת המפתח", "exampleHe": ""}],
   "quotes": [{"domain": "", "text": "", "source": "", "note": "איך משתמשים בציטוט"}],
-  "requestsDone": [],
   "weekly": ${c.isFriday ? '{"note": "משפט פתיחה לסיכום", "ideas": [{"domain": "", "title": "", "text": ""}], "quiz": [{"q": "", "options": ["", "", "", ""], "answer": 0, "explain": "", "ltr": false}]}' : 'null'}
-}
-${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. שאלה אחת לפחות על אנגלית, עם "ltr": true. פזר את התשובות הנכונות בין המיקומים.' : ''}`;
+}`;
   }
 
   function toBlock(o, c) {
@@ -1390,9 +1409,15 @@ ${c.isFriday ? 'ב-weekly: בדיוק 5 רעיונות, ו-6 עד 8 שאלות. 
     const ctx = buildContext();
     ctx.target = target; ctx.extra = !!extra; if (extra) ctx.isFriday = false;
     try {
-      const r = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: briefPrompt(ctx) }], maxTokens: 20000, search: 6 });
-      if (r.stop === 'max_tokens') throw { code: 'cut' };
-      const block = toBlock(parseJSON(textOf(r.content)), ctx);
+      const r1 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: corePrompt(ctx) }], maxTokens: 16000, search: 5 });
+      if (r1.stop === 'max_tokens') throw { code: 'cut' };
+      const core = parseJSON(textOf(r1.content));
+      if (!core || !core.day || !Array.isArray(core.knowledge) || core.knowledge.length < 5) throw { code: 'parse' };
+      genStageIdx = Math.max(genStageIdx, 3); renderGenBanner();
+      const r2 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: langPrompt(ctx, core) }], maxTokens: 12000 });
+      if (r2.stop === 'max_tokens') throw { code: 'cut' };
+      const lang = parseJSON(textOf(r2.content));
+      const block = toBlock(Object.assign({}, core, lang), ctx);
       mergeContent(block, false);
       if (!extra) st().lastGen = { date: today, at: new Date().toISOString(), ok: true };
       save(); currentDate = extra ? target : pickDate(); practice = null; answerDraft = { date: null, text: '', dirty: false };

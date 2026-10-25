@@ -282,10 +282,18 @@
     Object.keys(b).forEach(k => { if (o[k] && typeof o[k] === 'object') b[k] = k === 'settings' ? Object.assign(b.settings, o[k]) : o[k]; });
     return b;
   }
+  /* ניקוי תגיות מקור שהמודל מוסיף לפעמים אחרי חיפוש ברשת */
+  const CITE_RE = /<\/?\s*cite\b[^>]*>/gi;
+  function stripCites(o) {
+    if (typeof o === 'string') return o.indexOf('cite') < 0 ? o : o.replace(CITE_RE, '').replace(/[ \t]{2,}/g, ' ');
+    if (Array.isArray(o)) return o.map(stripCites);
+    if (o && typeof o === 'object') { const r = {}; for (const k in o) r[k] = stripCites(o[k]); return r; }
+    return o;
+  }
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
-      if (raw) { const o = JSON.parse(raw); if (o && o.v === 1) return fromData(o); }
+      if (raw) { const o = JSON.parse(raw); if (o && o.v === 1) return fromData(stripCites(o)); }
     } catch (e) { /* אחסון חסום או פגום */ }
     return blank();
   }
@@ -1317,13 +1325,13 @@
     const t = String(text || '').replace(/```json|```/g, '');
     const a = t.indexOf('{'), z = t.lastIndexOf('}');
     if (a < 0 || z < a) throw { code: 'parse' };
-    try { return JSON.parse(t.slice(a, z + 1)); } catch (e) { throw { code: 'parse' }; }
+    try { return stripCites(JSON.parse(t.slice(a, z + 1))); } catch (e) { throw { code: 'parse' }; }
   }
   const clean = s => String(s || '').replace(/\*\*|__|^#+\s*/gm, '').replace(/^\s*[-•]\s+/gm, '').trim();
 
   /* ---------- הפרומפט של תדריך הבוקר ---------- */
   const SYS_BRIEF = `אתה העורך של "דעת יומית", תדריך ידע יומי אישי לאדם בישראל שמבקש להחכים, לגבש השקפה צלולה ולהוביל ציבורית.
-סגנון: עברית תקנית, בוגרת ומכובדת. כשפונים לקורא, בלשון זכר. עומק של מרצה מעולה, לא אקדמי ולא פשטני. נימה מעט תורנית ומכובדת היכן שמתאים, עם מקורות מדויקים (ספר, פרק, דף). בלי הקדמות, בלי סגנון שיחה, בלי אימוג'י ובלי Markdown.
+סגנון: עברית תקנית, בוגרת ומכובדת. כשפונים לקורא, בלשון זכר. עומק של מרצה מעולה, לא אקדמי ולא פשטני. נימה מעט תורנית ומכובדת היכן שמתאים, עם מקורות מדויקים (ספר, פרק, דף). בלי הקדמות, בלי סגנון שיחה, בלי אימוג'י, בלי Markdown ובלי תגיות ציטוט (cite) או הפניות ממוספרות בתוך הטקסט.
 דיוק: כל עובדה, מספר, תאריך וציטוט חייבים להיות נכונים. את האקטואליה אמת בחיפוש ברשת. ציטוט שאינך בטוח בנוסחו או במקורו, אל תכלול.
 ניטרליות: בנושאים שבמחלוקת פוליטית הצג עובדות ואת הטיעונים החזקים של כמה צדדים, בלי לנקוט עמדה ובלי לשפוט מפלגה או אדם.
 הפלט הסופי: אובייקט JSON יחיד ותקין, בלי שום טקסט לפניו או אחריו.`;

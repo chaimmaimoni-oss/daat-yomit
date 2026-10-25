@@ -1495,7 +1495,7 @@ ${EN_ON ? '  "english": [{"domain": "", "en": "", "he": "", "gloss": "Word=פי�
     const ctx = buildContext();
     ctx.target = target; ctx.extra = !!extra; if (extra) ctx.isFriday = false;
     try {
-      const r1 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: corePrompt(ctx) }], maxTokens: 32000, search: 5, onProgress: n => { genChars = n; if (genStageIdx < 2) genStageIdx = 2; renderGenProgress(); } });
+      const r1 = await callClaude({ system: SYS_BRIEF, messages: [{ role: 'user', content: corePrompt(ctx) }], maxTokens: 32000, search: 3, onProgress: n => { genChars = n; if (genStageIdx < 2) genStageIdx = 2; renderGenProgress(); } });
       if (r1.stop === 'max_tokens') throw { code: 'cut' };
       const core = parseJSON(textOf(r1.content));
       if (!core || !core.day || !Array.isArray(core.knowledge) || core.knowledge.length < 3) throw { code: 'parse' };

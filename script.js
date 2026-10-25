@@ -1218,7 +1218,7 @@
     const key = getKey(); if (!key) throw { code: 'nokey' };
     const base = { model: st().model || MODELS[0][0], max_tokens: opts.maxTokens || 2000, messages: opts.messages };
     if (opts.system) base.system = opts.system;
-    if (opts.search) base.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: opts.search, user_location: { type: 'approximate', country: 'IL', timezone: 'Asia/Jerusalem' } }];
+    if (opts.search) base.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: opts.search }];
     let msgs = opts.messages.slice(), content = [];
     for (let round = 0; round < 5; round++) {
       let res;
